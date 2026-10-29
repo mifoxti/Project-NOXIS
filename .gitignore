@@ -1,0 +1,7 @@
+/build/
+/build-dsp/
+/external/
+/renders/
+/.vs/
+*.user
+*.log
