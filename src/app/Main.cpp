@@ -17,9 +17,11 @@ public:
 private:
     class Window final : public juce::DocumentWindow {
     public:
-        Window():DocumentWindow("NOXIS",noxis::ui::background(),allButtons){setUsingNativeTitleBar(true);main=new noxis::ui::MainComponent;setContentOwned(main,true);setResizable(true,false);setResizeLimits(1100,720,1800,1100);centreWithSize(1200,760);setVisible(true);}
+        Window():DocumentWindow("NOXIS",noxis::ui::background(),allButtons){setLookAndFeel(&look);setUsingNativeTitleBar(false);setTitleBarHeight(28);setColour(juce::DocumentWindow::textColourId,noxis::ui::muted());main=new noxis::ui::MainComponent;setContentOwned(main,true);setResizable(true,false);setResizeLimits(1100,720,2000,1400);centreWithSize(1280,820);setVisible(true);}
+        ~Window() override {clearContentComponent();setLookAndFeel(nullptr);}
         void closeButtonPressed() override{juce::JUCEApplication::getInstance()->systemRequestedQuit();}
         noxis::ui::MainComponent* main=nullptr;
+        noxis::ui::NoxisLookAndFeel look;
     };
     void timerCallback() override {
         if(!smoke||!window)return;auto& host=window->main->host;

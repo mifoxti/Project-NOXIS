@@ -1,4 +1,9 @@
 #include "ui/MainComponent.h"
+#if JUCE_WINDOWS
+#include <windows.h>
+#undef min
+#undef max
+#endif
 
 namespace noxis::ui {
 Knob& MainComponent::addKnob(juce::Component& parent,Param p,const juce::String& title){auto k=std::make_unique<Knob>(host.parameters,p,title);parent.addAndMakeVisible(*k);knobs.push_back(std::move(k));return *knobs.back();}
@@ -30,9 +35,9 @@ MainComponent::MainComponent() {
         juce::DialogWindow::LaunchOptions options;options.content.setOwned(selector.release());options.dialogTitle=utf8("NOXIS — аудио и MIDI");options.dialogBackgroundColour=background();options.escapeKeyTriggersCloseButton=true;options.useNativeTitleBar=true;options.resizable=false;
         audioDialog=options.launchAsync();audioDialog->setLookAndFeel(&look);
     };
-    panic.onClick=[this]{host.panic();keyboardState.allNotesOff(0);computerHeld.fill(false);};
+    panic.onClick=[this]{host.panic();keyboardState.allNotesOff(0);computerKeyboard.reset();};
     octDown.onClick=[this]{changeOctave(-1);};octUp.onClick=[this]{changeOctave(1);};
-    keyboard.setAvailableRange(0,127);keyboard.setOctaveForMiddleC(4);keyboard.setLowestVisibleKey(48);keyboard.setKeyWidth(30);keyboard.setVelocity(.8f,true);keyboard.setWantsKeyboardFocus(false);keyboard.clearKeyMappings();
+    keyboard.setAvailableRange(0,127);keyboard.setOctaveForMiddleC(5);keyboard.setLowestVisibleKey(48);keyboard.setKeyWidth(30);keyboard.setVelocity(.8f,true);keyboard.setWantsKeyboardFocus(false);keyboard.clearKeyMappings();
     keyboard.setColour(juce::MidiKeyboardComponent::whiteNoteColourId,juce::Colour(0xffd8d4e5));keyboard.setColour(juce::MidiKeyboardComponent::blackNoteColourId,juce::Colour(0xff15151f));keyboard.setColour(juce::MidiKeyboardComponent::keyDownOverlayColourId,purple().withAlpha(.8f));keyboard.setColour(juce::MidiKeyboardComponent::mouseOverKeyOverlayColourId,purple().withAlpha(.3f));
     keyboardState.addListener(this);
     status.setColour(juce::Label::textColourId,muted());status.setFont(juce::FontOptions(11));octave.setFont(juce::FontOptions(12));voiceCount.setFont(juce::FontOptions(12));levelText.setFont(juce::FontOptions(11));
@@ -45,7 +50,7 @@ void MainComponent::handleNoteOn(juce::MidiKeyboardState*,int channel,int note,f
 void MainComponent::handleNoteOff(juce::MidiKeyboardState*,int channel,int note,float){host.send({NoteEvent::Off,note,0,channel});}
 void MainComponent::applyPreset(int number){currentPreset=juce::jlimit(0,3,number);const auto& p=factoryPresets()[static_cast<std::size_t>(currentPreset)];host.parameters.replace(p.values);presetName=p.name;savedValues=p.values;presets.setSelectedId(currentPreset+1,juce::dontSendNotification);sync();repaint();}
 void MainComponent::setMode(bool value){simple=value;noob.setToggleState(simple,juce::dontSendNotification);pro.setToggleState(!simple,juce::dontSendNotification);layoutControls();}
-void MainComponent::changeOctave(int delta){host.panic();keyboardState.allNotesOff(0);computerHeld.fill(false);baseOctave=juce::jlimit(0,6,baseOctave+delta);keyboard.setLowestVisibleKey((baseOctave+1)*12);octave.setText("C"+juce::String(baseOctave)+utf8(" – E")+juce::String(baseOctave+1),juce::dontSendNotification);}
+void MainComponent::changeOctave(int delta){host.panic();keyboardState.allNotesOff(0);computerKeyboard.reset();baseOctave=juce::jlimit(1,9,baseOctave+delta);keyboard.setLowestVisibleKey(baseOctave*12-12);octave.setText("Q = C"+juce::String(baseOctave),juce::dontSendNotification);}
 void MainComponent::choosePresetFile(bool writing){
     if(chooser)return;
     chooser=std::make_unique<juce::FileChooser>(writing?utf8("Сохранить пресет NOXIS"):utf8("Загрузить пресет NOXIS"),juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("My Sound.noxis"),"*.noxis");
@@ -57,16 +62,25 @@ void MainComponent::choosePresetFile(bool writing){
         else juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,utf8("Пресет"),juce::String::fromUTF8(error.c_str()));
     }juce::MessageManager::callAsync([safe]{if(safe)safe->chooser.reset();});});
 }
-bool MainComponent::keyPressed(const juce::KeyPress& key){if(dynamic_cast<juce::TextEditor*>(juce::Component::getCurrentlyFocusedComponent()))return false;if(key==juce::KeyPress::escapeKey){panic.triggerClick();return true;}if(key.getTextCharacter()=='z'){changeOctave(-1);return true;}if(key.getTextCharacter()=='x'){changeOctave(1);return true;}return keyStateChanged(true);}
+bool MainComponent::keyPressed(const juce::KeyPress& key){if(dynamic_cast<juce::TextEditor*>(juce::Component::getCurrentlyFocusedComponent()))return false;if(key==juce::KeyPress::escapeKey){panic.triggerClick();return true;}if(key.getTextCharacter()=='['){changeOctave(-1);return true;}if(key.getTextCharacter()==']'){changeOctave(1);return true;}return keyStateChanged(true);}
 bool MainComponent::keyStateChanged(bool){
     const bool editing=dynamic_cast<juce::TextEditor*>(juce::Component::getCurrentlyFocusedComponent())!=nullptr;
-    constexpr std::array<int,17> keys{'a','w','s','e','d','f','t','g','y','h','u','j','k','o','l','p',';'};bool handled=false;
-    for(std::size_t i=0;i<keys.size();++i){const bool down=juce::KeyPress::isKeyCurrentlyDown(keys[i])||juce::KeyPress::isKeyCurrentlyDown(juce::CharacterFunctions::toUpperCase(static_cast<juce::juce_wchar>(keys[i])));if(editing&&down&&!computerHeld[i])continue;if(down!=computerHeld[i]){computerHeld[i]=down;handled=true;if(down){computerNotes[i]=(baseOctave+1)*12+static_cast<int>(i);keyboardState.noteOn(1,computerNotes[i],.8f);}else keyboardState.noteOff(1,computerNotes[i],0);}}
-    return handled;
+    std::array<bool,musicalKeys.size()> keys{};
+    for(std::size_t i=0;i<keys.size();++i){
+#if JUCE_WINDOWS
+        const auto vk=MapVirtualKeyW(static_cast<UINT>(musicalKeys[i].scan),MAPVK_VSC_TO_VK_EX);keys[i]=(GetAsyncKeyState(static_cast<int>(vk))&0x8000)!=0;
+#else
+        keys[i]=juce::KeyPress::isKeyCurrentlyDown(musicalKeys[i].key);
+#endif
+    }
+    const bool focused=juce::Process::isForegroundProcess()&&getTopLevelComponent()->hasKeyboardFocus(true);
+    const auto modifiers=juce::ModifierKeys::getCurrentModifiersRealtime();
+    computerKeyboard.update(keys,baseOctave*12,true,editing||modifiers.isCtrlDown()||modifiers.isAltDown(),focused,[this](int n){keyboardState.noteOn(1,n,.8f);},[this](int n){keyboardState.noteOff(1,n,0);});
+    return !editing&&std::any_of(keys.begin(),keys.end(),[](bool down){return down;});
 }
 void MainComponent::sync(){master.sync();for(auto& k:knobs)k->sync();waveA.sync();waveB.sync();if(!movement.isMouseButtonDown())movement.setValue((std::abs(host.parameters.get(Param::DetuneA))+std::abs(host.parameters.get(Param::DetuneB)))*.5f,juce::dontSendNotification);}
 void MainComponent::timerCallback(){
-    if(!juce::Process::isForegroundProcess()&&std::any_of(computerHeld.begin(),computerHeld.end(),[](bool h){return h;})){host.panic();keyboardState.allNotesOff(0);computerHeld.fill(false);}
+    keyStateChanged(false);
     sync();scope.update();meter.setLevel(host.peak.load(),host.rms.load());voiceCount.setText(juce::String(host.voices.load())+" / 8 voices",juce::dontSendNotification);
     const float peak=host.peak.load();levelText.setText(peak>.00001f?juce::String(20*std::log10(peak),1)+" dBFS":utf8("−∞ dBFS"),juce::dontSendNotification);
     if(auto* device=host.devices.getCurrentAudioDevice())status.setText(device->getName()+utf8(" · ")+juce::String(device->getCurrentSampleRate()/1000,1)+utf8(" kHz · ")+juce::String(device->getCurrentBufferSizeSamples())+" samples",juce::dontSendNotification);
@@ -102,7 +116,7 @@ void MainComponent::layoutControls(){
 void MainComponent::paint(juce::Graphics& g){
     g.fillAll(background());g.setColour(purple());g.setFont(juce::FontOptions(32,juce::Font::bold));g.drawText("NOXIS",24,19,160,38,juce::Justification::left);g.setColour(muted());g.setFont(juce::FontOptions(10));g.drawText("DARK MATTER / PHASE 01",26,58,160,14,juce::Justification::left);
     g.setColour(juce::Colour(0xff292736));g.drawHorizontalLine(80,24,static_cast<float>(getWidth()-24));g.drawHorizontalLine(getHeight()-190,24,static_cast<float>(getWidth()-24));
-    g.setColour(muted());g.setFont(juce::FontOptions(11));g.drawText(utf8("A W S E D F T G Y H U J K  ·  Z / X — октава  ·  ESC — panic"),340,getHeight()-178,getWidth()-470,28,juce::Justification::centredLeft);
+    g.setColour(muted());g.setFont(juce::FontOptions(11));g.drawText(utf8("Q = C5 · Z = C4 · [ / ] — октава · ESC — panic"),340,getHeight()-178,getWidth()-470,28,juce::Justification::centredLeft);
     auto body=routeView.getBounds();if(currentTab==1){g.setColour(text());g.setFont(juce::FontOptions(22,juce::Font::bold));g.drawText(utf8("Звуковой тракт"),body.removeFromTop(45),juce::Justification::left);g.setFont(juce::FontOptions(14));g.setColour(muted());g.drawText(utf8("Фиксированный порядок обработки в Phase 1"),body.removeFromTop(32),juce::Justification::left);
         const std::array<juce::String,4> labels{"OSC A + OSC B","LOW-PASS + ADSR","SATURATION","MASTER / OUTPUT"};int box=(body.getWidth()-90)/4;for(int i=0;i<4;++i){auto r=juce::Rectangle<int>(body.getX()+i*(box+30),body.getY()+65,box,100);g.setColour(panelColour());g.fillRoundedRectangle(r.toFloat(),10);g.setColour(purple());g.drawText(labels[static_cast<std::size_t>(i)],r,juce::Justification::centred);if(i<3)g.drawText(utf8("→"),r.getRight(),r.getY(),30,100,juce::Justification::centred);}
         g.setColour(muted());g.drawText(utf8("Каждый голос: два осциллятора → фильтр → амплитудная огибающая. Затем голоса суммируются."),body.getX(),body.getY()+190,body.getWidth(),35,juce::Justification::centred);
