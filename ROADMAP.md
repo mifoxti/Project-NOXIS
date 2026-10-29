@@ -3,7 +3,7 @@
 ## Завершение проверки Phase 2
 
 Stereo-unison, LFO, modulation matrix, glide, pitch bend, эффекты, реальный Routing,
-редактор схемы, 36 пресетов и формат v2 реализованы в feature/phase2-audio.
+редактор схемы, 36 пресетов и формат v2 реализованы и слиты в master.
 CTest 5/5 и короткие device smoke/stress проходят. Компьютерное управление GUI
 остановлено физическим Escape; до завершения остаётся проверить:
 
