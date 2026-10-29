@@ -1,5 +1,6 @@
 #include "synth/Engine.h"
 #include "state/Preset.h"
+#include "audio/RealtimeQueues.h"
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -14,6 +15,15 @@ void render(noxis::Engine& e,int samples) {for(int i=0;i<samples;++i)require(std
 }
 int main() {
     using namespace noxis;
+    EventQueue<int,4> queue;int event=0;
+    require(!queue.pop(event),"empty event queue");for(int i=0;i<4;++i)require(queue.push(i),"queue capacity");require(!queue.push(99),"queue overflow bounded");
+    for(int i=0;i<4;++i){require(queue.pop(event),"queue pop");require(event==i,"FIFO order");}
+    require(queue.push(7)&&queue.pop(event)&&event==7,"queue wraps safely");
+    EventQueue<int,512> concurrent;std::array<std::thread,3> producers;std::array<int,3> received{};
+    for(int id=0;id<3;++id)producers[static_cast<std::size_t>(id)]=std::thread([&,id]{for(int n=0;n<5000;++n)while(!concurrent.push(id*5000+n))std::this_thread::yield();});
+    for(int n=0;n<15000;){if(concurrent.pop(event)){const int id=event/5000;require(id>=0&&id<3,"MPSC valid producer");require(event%5000==received[static_cast<std::size_t>(id)]++,"MPSC ordering");++n;}else std::this_thread::yield();}
+    for(auto& producer:producers)producer.join();
+    ScopeBuffer scope;float scopeSample=0;require(!scope.pop(scopeSample),"scope initially empty");scope.push(.42f);require(scope.pop(scopeSample)&&scopeSample==.42f,"real scope sample");
     require(std::abs(midiFrequency(69)-440)<1e-9,"MIDI A4");
     for(double rate:{44100.,48000.,96000.}) for(int wave=0;wave<4;++wave) {
         Oscillator osc;float previous=0;int crossings=0;double power=0;
