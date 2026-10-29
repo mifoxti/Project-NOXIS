@@ -1,0 +1,102 @@
+NOXIS_PRESET 2
+Dark Atmosphere
+@category "PAD"
+@description "Низкий шумовой слой и медленная резонансная модуляция."
+@tags "pad,dark,noise,cinematic"
+@character "Густой, тревожный"
+@range 36 67
+waveA 2
+octaveA -1
+detuneA 0
+levelA 0.699999988
+waveB 1
+octaveB -1
+detuneB 0
+levelB 0.349999994
+attack 2
+decay 1.29999995
+sustain 0.720000029
+release 4.80000019
+cutoff 610
+resonance 0.49000001
+drive 7
+output -7
+master -9
+unisonVoices 3
+unisonDetune 22
+spread 0.800000012
+width 0.850000024
+phaseRandom 0
+glide 0
+mono 0
+legato 0
+bendRange 2
+lfo1Wave 0
+lfo1Rate 0.075000003
+lfo1Depth 1
+lfo1Phase 0
+lfo1Sync 0
+lfo1Retrigger 1
+lfo2Wave 1
+lfo2Rate 0.119999997
+lfo2Depth 1
+lfo2Phase 0
+lfo2Sync 0
+lfo2Retrigger 1
+bpm 120
+lfo1Pitch 0
+lfo1Cutoff 1.14999998
+lfo1Level 0
+lfo1Width 0
+lfo2Pitch 0
+lfo2Cutoff 0
+lfo2Level 0.180000007
+lfo2Width 0
+envCutoff 0
+saturationEnabled 1
+saturationMix 1
+chorusEnabled 0
+chorusRate 0.400000006
+chorusDepth 0.400000006
+chorusMix 0.25
+delayEnabled 0
+delayTime 0.375
+delayFeedback 0.349999994
+delayMix 0.25
+delayStereo 1
+reverbEnabled 1
+reverbSize 0.949999988
+reverbDamping 0.779999971
+reverbMix 0.419999987
+subLevel 0
+noiseLevel 0.129999995
+semitoneB 0
+@node 0 1 20 50
+@node 1 1 20 200
+@node 2 1 190 120
+@node 3 1 360 120
+@node 4 1 530 120
+@node 5 1 700 120
+@node 6 1 870 120
+@node 7 1 1040 120
+@node 8 1 1210 120
+@node 9 1 190 330
+@node 10 1 530 330
+@node 11 1 870 330
+@edge 0 2 0
+@edge 1 2 1
+@edge 2 3 0
+@edge 3 4 0
+@edge 4 5 0
+@edge 5 6 0
+@edge 6 7 0
+@edge 7 8 0
+@edge 9 2 2
+@edge 9 3 3
+@edge 9 2 4
+@edge 9 2 5
+@edge 10 2 2
+@edge 10 3 3
+@edge 10 2 4
+@edge 10 2 5
+@edge 11 3 3
