@@ -64,3 +64,12 @@ ctest --test-dir build -C Release --output-on-failure
 ```
 DSP без JUCE: ./scripts/build.ps1 -DspOnly.
 При первой сборке нужен доступ к JUCE либо external/JUCE; готовое приложение офлайн.
+
+## Git и публикация
+
+Репозиторий: https://github.com/mifoxti/Project-NOXIS.
+На GitHub опубликованы master, feature/dsp-engine и feature/standalone-ui.
+Ветка по умолчанию — master; обе фича-ветки слиты в неё.
+Автор новых коммитов для этого репозитория — mifoxti; сообщения — на русском.
+Исходники, тесты, пресеты и документация отслеживаются Git; build/, external/
+и сгенерированные WAV остаются локальными артефактами.
