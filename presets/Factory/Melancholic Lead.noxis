@@ -1,0 +1,102 @@
+NOXIS_PRESET 2
+Melancholic Lead
+@category "LEAD"
+@description "Узкий тёплый лид с legato и медленным движением тембра."
+@tags "lead,mono,warm,legato"
+@character "Камерный, задумчивый"
+@range 48 84
+waveA 3
+octaveA 0
+detuneA 0
+levelA 0.699999988
+waveB 1
+octaveB -1
+detuneB 0
+levelB 0.119999997
+attack 0.0900000036
+decay 0.400000006
+sustain 0.75
+release 0.949999988
+cutoff 1850
+resonance 0.150000006
+drive 3
+output -3
+master -9
+unisonVoices 1
+unisonDetune 10
+spread 0.800000012
+width 0.180000007
+phaseRandom 0
+glide 0.200000003
+mono 1
+legato 1
+bendRange 2
+lfo1Wave 0
+lfo1Rate 0.209999993
+lfo1Depth 1
+lfo1Phase 0
+lfo1Sync 0
+lfo1Retrigger 1
+lfo2Wave 1
+lfo2Rate 4.9000001
+lfo2Depth 1
+lfo2Phase 0
+lfo2Sync 0
+lfo2Retrigger 1
+bpm 120
+lfo1Pitch 0
+lfo1Cutoff 0.319999993
+lfo1Level 0
+lfo1Width 0
+lfo2Pitch 0.0450000018
+lfo2Cutoff 0
+lfo2Level 0
+lfo2Width 0
+envCutoff 0
+saturationEnabled 1
+saturationMix 1
+chorusEnabled 0
+chorusRate 0.400000006
+chorusDepth 0.400000006
+chorusMix 0.25
+delayEnabled 0
+delayTime 0.375
+delayFeedback 0.349999994
+delayMix 0.25
+delayStereo 1
+reverbEnabled 1
+reverbSize 0.479999989
+reverbDamping 0.699999988
+reverbMix 0.219999999
+subLevel 0
+noiseLevel 0
+semitoneB 0
+@node 0 1 20 50
+@node 1 1 20 200
+@node 2 1 190 120
+@node 3 1 360 120
+@node 4 1 530 120
+@node 5 1 700 120
+@node 6 1 870 120
+@node 7 1 1040 120
+@node 8 1 1210 120
+@node 9 1 190 330
+@node 10 1 530 330
+@node 11 1 870 330
+@edge 0 2 0
+@edge 1 2 1
+@edge 2 3 0
+@edge 3 4 0
+@edge 4 5 0
+@edge 5 6 0
+@edge 6 7 0
+@edge 7 8 0
+@edge 9 2 2
+@edge 9 3 3
+@edge 9 2 4
+@edge 9 2 5
+@edge 10 2 2
+@edge 10 3 3
+@edge 10 2 4
+@edge 10 2 5
+@edge 11 3 3

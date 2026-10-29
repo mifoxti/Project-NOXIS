@@ -32,14 +32,14 @@ Knob::Knob(ParameterStore& s,Param p,const juce::String& title):store(s),paramet
     slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);slider.setTextBoxStyle(juce::Slider::TextBoxBelow,false,90,21);
     slider.setRange(d.min,d.max,d.integral?1:0);slider.setDoubleClickReturnValue(true,d.initial);
     if(p==Param::Cutoff)slider.setSkewFactorFromMidPoint(1800);else if(p==Param::Attack||p==Param::Decay||p==Param::Release)slider.setSkewFactorFromMidPoint(.4);
-    slider.textFromValueFunction=[p](double value){const auto& info=parameterInfo[index(p)];if(info.unit=="%")return juce::String(value*100,0)+" %";return juce::String(value,info.integral||info.unit=="Hz"?0:(info.unit=="s"?3:1))+" "+juce::String(info.unit.data());};
-    slider.valueFromTextFunction=[p](const juce::String& value){const double number=value.getDoubleValue();return parameterInfo[index(p)].unit=="%"?number/100:number;};
+    slider.textFromValueFunction=[this,p](double value){const auto& info=parameterInfo[index(p)];if((p==Param::Lfo1Rate&&store.get(Param::Lfo1Sync)>.5f)||(p==Param::Lfo2Rate&&store.get(Param::Lfo2Sync)>.5f)){const double cpb=Lfo::synchronisedRate(value,60);return (cpb<1?"1/"+juce::String(1/cpb,0):juce::String(cpb,0))+" cpb";}if(info.unit=="%")return juce::String(value*100,0)+" %";const int precision=info.integral||p==Param::Cutoff?0:(info.unit=="s"?3:(info.unit=="Hz"?2:1));return juce::String(value,precision)+" "+juce::String(info.unit.data());};
+    slider.valueFromTextFunction=[p](const juce::String& value){double number=value.getDoubleValue();if((p==Param::Lfo1Rate||p==Param::Lfo2Rate)&&value.containsChar('/')){const double denominator=value.fromFirstOccurrenceOf("/",false,false).getDoubleValue();if(denominator>0)number/=denominator;}return parameterInfo[index(p)].unit=="%"?number/100:number;};
     slider.onValueChange=[this]{store.set(parameter,static_cast<float>(slider.getValue()));};
     slider.setColour(juce::Slider::textBoxTextColourId,text());slider.setColour(juce::Slider::textBoxOutlineColourId,juce::Colours::transparentBlack);slider.setColour(juce::Slider::textBoxBackgroundColourId,juce::Colours::transparentBlack);slider.updateText();
     slider.setTooltip(utf8("Перетаскивайте; Shift — точно; двойной щелчок — сброс. Значение можно ввести с клавиатуры."));sync();
 }
 void Knob::resized(){auto r=getLocalBounds();label.setBounds(r.removeFromTop(19));slider.setBounds(r);}
-void Knob::sync(){if(!slider.isMouseButtonDown())slider.setValue(store.get(parameter),juce::dontSendNotification);}
+void Knob::sync(){auto* focused=juce::Component::getCurrentlyFocusedComponent();if(dynamic_cast<juce::TextEditor*>(focused)&&slider.isParentOf(focused))return;if(!slider.isMouseButtonDown()){slider.setValue(store.get(parameter),juce::dontSendNotification);slider.updateText();}}
 WaveformSelector::WaveformSelector(ParameterStore& s,Param p):store(s),parameter(p) {
     const std::array<juce::String,4> names{"SINE","SAW","SQR","TRI"};
     for(std::size_t i=0;i<buttons.size();++i){auto& b=buttons[i];b.setButtonText(names[i]);addAndMakeVisible(b);b.onClick=[this,i]{store.set(parameter,static_cast<float>(i));sync();};}sync();
@@ -47,7 +47,7 @@ WaveformSelector::WaveformSelector(ParameterStore& s,Param p):store(s),parameter
 void WaveformSelector::resized(){auto r=getLocalBounds();const int w=r.getWidth()/4;for(auto& b:buttons)b.setBounds(r.removeFromLeft(w).reduced(2,0));}
 void WaveformSelector::sync(){for(std::size_t i=0;i<buttons.size();++i)buttons[i].setToggleState(static_cast<int>(store.get(parameter))==static_cast<int>(i),juce::dontSendNotification);}
 void Panel::paint(juce::Graphics& g){auto r=getLocalBounds().toFloat().reduced(.5f);g.setColour(panelColour());g.fillRoundedRectangle(r,10);g.setColour(juce::Colour(0xff303041));g.drawRoundedRectangle(r,10,1);g.setColour(text());g.setFont(juce::FontOptions(14,juce::Font::bold));g.drawText(name,18,12,getWidth()-36,22,juce::Justification::left);g.setColour(muted());g.setFont(juce::FontOptions(11));g.drawText(detail,18,35,getWidth()-36,16,juce::Justification::left);}
-TabBar::TabBar(){const std::array<juce::String,4> names{"SYNTH","ROUTING","FX","PRESETS"};for(std::size_t i=0;i<buttons.size();++i){auto& b=buttons[i];addAndMakeVisible(b);b.setButtonText(names[i]);b.onClick=[this,i]{select(static_cast<int>(i));if(onSelect)onSelect(static_cast<int>(i));};}select(0);}
+TabBar::TabBar(){const std::array<juce::String,5> names{"SYNTH","ROUTING","FX","PRESETS","MODULATION"};for(std::size_t i=0;i<buttons.size();++i){auto& b=buttons[i];addAndMakeVisible(b);b.setButtonText(names[i]);b.onClick=[this,i]{select(static_cast<int>(i));if(onSelect)onSelect(static_cast<int>(i));};}select(0);}
 void TabBar::resized(){auto r=getLocalBounds();for(auto& b:buttons)b.setBounds(r.removeFromLeft(112).reduced(0,3).withTrimmedRight(8));}
 void TabBar::select(int tab){for(std::size_t i=0;i<buttons.size();++i)buttons[i].setToggleState(static_cast<int>(i)==tab,juce::dontSendNotification);}
 PresetSelector::PresetSelector(){int id=1;for(const auto& p:factoryPresets())addItem(p.name,id++);setSelectedId(1,juce::dontSendNotification);}

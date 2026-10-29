@@ -43,7 +43,7 @@ private:juce::String name,detail;
 };
 class TabBar final : public juce::Component {
 public:TabBar();void resized() override;void select(int);std::function<void(int)> onSelect;
-private:std::array<juce::TextButton,4> buttons;
+private:std::array<juce::TextButton,5> buttons;
 };
 class PresetSelector final : public juce::ComboBox {public:PresetSelector();};
 class AudioMeter final : public juce::Component {

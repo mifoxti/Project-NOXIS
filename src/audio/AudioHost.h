@@ -6,16 +6,19 @@
 #include <array>
 
 namespace noxis {
-struct NoteEvent { enum Kind { On, Off, Pedal, Panic } kind=Panic; int note=0; float value=0; int channel=1; };
+struct NoteEvent { enum Kind { On, Off, Pedal, Panic, Bend } kind=Panic; int note=0; float value=0; int channel=1;std::uint32_t epoch=0; };
 class AudioHost final : private juce::AudioIODeviceCallback,private juce::MidiInputCallback {
 public:
     AudioHost();~AudioHost() override;
-    void send(NoteEvent event) noexcept {if(!events.push(event))panicRequested.store(true);}
-    void panic() noexcept {panicRequested.store(true);}
+    void send(NoteEvent event) noexcept {event.epoch=eventEpoch.load();if(!events.push(event))panic();}
+    void panic() noexcept {eventEpoch.fetch_add(1);panicRequested.store(true);}
     ParameterStore parameters;
     juce::AudioDeviceManager devices;
     ScopeBuffer scope;
     std::atomic<float> peak{0},rms{0};std::atomic<int> voices{0};
+    std::array<std::atomic<float>,2> stereoPeak{},stereoRms{},lfo{};
+    std::atomic<float> envelopeLevel{0};
+    std::array<std::atomic<bool>,128> midiDown{};
     std::atomic<std::uint64_t> callbacks{0};
     juce::String initialError;
     void beginCapture() noexcept {captureEnabled.store(true,std::memory_order_release);}
@@ -28,10 +31,11 @@ private:
     void audioDeviceStopped() override;
     void handleIncomingMidiMessage(juce::MidiInput*,const juce::MidiMessage&) override;
     Engine engine;
-    Values snapshot=defaults();
+    RealtimeState snapshot{};
     EventQueue<NoteEvent,512> events;
     std::atomic<bool> panicRequested{false},captureEnabled{false};
-    std::array<float,48000*8> capture{};
+    std::atomic<std::uint32_t> eventEpoch{0};
+    std::array<float,48000*8*2> capture{};
     std::atomic<std::size_t> captureSize{0};
     std::atomic<double> rate{48000};
     int scopeDivider=0;
