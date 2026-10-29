@@ -1,5 +1,6 @@
 #pragma once
 #include "ui/Controls.h"
+#include "ui/KeyboardMap.h"
 #include <memory>
 #include <vector>
 
@@ -46,10 +47,9 @@ private:
     juce::Label status,octave,voiceCount,levelText;
     std::array<juce::TextButton,4> presetCards;
     std::unique_ptr<juce::FileChooser> chooser;
-    bool simple=false;int currentTab=0,currentPreset=0,baseOctave=3;
+    bool simple=false;int currentTab=0,currentPreset=0,baseOctave=5;
     juce::Component::SafePointer<juce::DialogWindow> audioDialog;
-    std::array<bool,17> computerHeld{};
-    std::array<int,17> computerNotes{};
+    KeyboardTracker computerKeyboard;
     juce::String presetName{"Init"};Values savedValues=defaults();
 };
 }

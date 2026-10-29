@@ -1,6 +1,7 @@
 #include "synth/Engine.h"
 #include "state/Preset.h"
 #include "audio/RealtimeQueues.h"
+#include "ui/KeyboardMap.h"
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -15,6 +16,14 @@ void render(noxis::Engine& e,int samples) {for(int i=0;i<samples;++i)require(std
 }
 int main() {
     using namespace noxis;
+    require(musicalKeys[0].key=='Q'&&60+musicalKeys[0].offset==60,"Q is FL C5 / MIDI 60");
+    for(std::size_t i=1;i<13;++i)require(musicalKeys[i].offset==musicalKeys[i-1].offset+1,"upper row semitones");
+    for(std::size_t i=14;i<musicalKeys.size();++i)require(musicalKeys[i].offset==musicalKeys[i-1].offset+1,"lower row semitones");
+    KeyboardTracker tracker;std::array<bool,musicalKeys.size()> heldKeys{};int ons=0,offs=0;
+    auto keyOn=[&](int){++ons;};auto keyOff=[&](int){++offs;};heldKeys[0]=heldKeys[2]=true;
+    tracker.update(heldKeys,60,true,false,true,keyOn,keyOff);tracker.update(heldKeys,60,true,false,true,keyOn,keyOff);require(ons==2,"keyboard polyphony without repeat");
+    tracker.update(heldKeys,60,true,true,true,keyOn,keyOff);require(offs==2,"text focus releases notes");
+    tracker.update(heldKeys,60,true,false,true,keyOn,keyOff);tracker.update(heldKeys,60,true,false,false,keyOn,keyOff);require(ons==4&&offs==4,"focus loss releases notes");
     EventQueue<int,4> queue;int event=0;
     require(!queue.pop(event),"empty event queue");for(int i=0;i<4;++i)require(queue.push(i),"queue capacity");require(!queue.push(99),"queue overflow bounded");
     for(int i=0;i<4;++i){require(queue.pop(event),"queue pop");require(event==i,"FIFO order");}
