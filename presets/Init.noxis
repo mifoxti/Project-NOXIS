@@ -1,0 +1,19 @@
+NOXIS_PRESET 1
+Init
+waveA 1
+octaveA 0
+detuneA 0
+levelA 0.699999988
+waveB 0
+octaveB 0
+detuneB 0
+levelB 0.25
+attack 0.0120000001
+decay 0.25
+sustain 0.699999988
+release 0.300000012
+cutoff 7000
+resonance 0.119999997
+drive 0
+output -3
+master -9

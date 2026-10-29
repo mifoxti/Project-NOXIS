@@ -5,3 +5,5 @@
 /.vs/
 *.user
 *.log
+/standalone-smoke.wav
+/standalone-smoke.txt
